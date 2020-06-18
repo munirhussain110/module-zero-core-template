@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Abp;
+using Abp.AspNetCore.Dependency;
+using Abp.Dependency;
+using Castle.Windsor;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -12,19 +15,39 @@ namespace SampleWorkerService
     {
         public static void Main(string[] args)
         {
-            using (var bootstrapper = AbpBootstrapper.Create<SampleWorkerServiceModule>())
-            {
-                bootstrapper.Initialize();
-            }
-
             CreateHostBuilder(args).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
+        private static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices(services =>
                 {
+                    var abpBootstrapper = AbpBootstrapper.Create<SampleWorkerServiceModule>();
+                    services.AddSingleton(abpBootstrapper);
+                    abpBootstrapper.Initialize();
+
                     services.AddHostedService<Worker>();
-                });
+                })
+                .UseCastleWindsor(IocManager.Instance.IocContainer);
     }
+
+    //public static IHostBuilder CreateHostBuilder(string[] args) =>
+    //    Host.CreateDefaultBuilder(args)
+    //        .ConfigureServices((hostContext, services) =>
+    //        {
+    //            services.AddHostedService<Worker>();
+    //        });
+
+    //private static IHostBuilder CreateHostBuilder(string[] args) =>
+    //    Host.CreateDefaultBuilder(args)
+    //        .ConfigureServices(services =>
+    //        {
+    //            var abpBootstrapper = AbpBootstrapper.Create<SampleWorkerServiceModule>();
+    //            services.AddSingleton(abpBootstrapper);
+    //            abpBootstrapper.Initialize();
+    //            var container = new WindsorContainer();
+    //            //WindsorRegistration.Populate(container, services, app.ApplicationServices);
+    //            var sp = container.Resolve<IServiceProvider>();
+    //            services.AddHostedService<Worker>();
+    //        });
 }
